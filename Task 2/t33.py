@@ -5,7 +5,7 @@ import hashlib
 from Crypto.Cipher import AES
 from Crypto import Random
 
-
+# Быстрое возведение в степень по модулю
 def my_pow(x, y, n):
     z = 1
     while y > 0:
