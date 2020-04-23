@@ -28,7 +28,7 @@ p = ('ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea6'
 g = 5
 p = int(p, 16)
 a = randint(1, p - 1)
-b = randint(1, g - 1)
+b = randint(1, p - 1)
 
 A = my_pow(g, a, p)
 B = my_pow(g, b, p)
@@ -73,7 +73,7 @@ class Client:
                 self.p = data[0]
                 self.g = data[1]
                 self.other_key = data[2]
-                self.random_key = randint(1, g - 1)
+                self.random_key = randint(1, p - 1)
                 self.generate_key()
             elif len(data) == 1:
                 self.other_key = data[0]
