@@ -4,7 +4,7 @@ import hashlib
 
 from Crypto.Cipher import AES
 
-from swapKey import Client
+from t33 import Client
 
 p = ('ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea6'
      '3b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245'
@@ -17,12 +17,12 @@ p = int(p, 16)
 
 
 def update_g(g):
-    A = Client(p, g1)
-    B = Client(p, g)
 
+    A = Client(p, g)
+    B = Client(p, g)
     print u'A send: p: {}, g: {}, A: {}'.format(A.p, A.g, A.my_key)
-    print u'B recv: p: {}, update g: {}, p: {}'.format(A.p, g, A.my_key)
-    A.send(B, data=(A.p, g, A.p))
+    print u'B recv: p: {}, update g: {}, p: {}'.format(A.p, A.g, A.my_key)
+    A.send(B, data=(A.p, A.g, A.my_key))
     print u'B send: B: {}'.format(B.my_key)
     print u'A recv: B: {}'.format(B.my_key)
     B.send(A, data=(B.my_key,))
@@ -30,7 +30,37 @@ def update_g(g):
     print A.final_key == B.final_key
     msg = b'Message for Bob!'
     # Отправим сообщение B
-    A.send(B, msg=msg)
+    decr_msg = A.send(B, msg=msg)
+    # Если g == 1, то ключ будет равен 1 ^ (ab) % p, то есть 1
+    if g == 1:
+        iv = decr_msg[-AES.block_size:]
+        decr_msg = decr_msg[:-AES.block_size]
+        sha1_key = hashlib.sha1(hex(1L)).hexdigest()[:16]
+        aes = AES.new(sha1_key, mode=AES.MODE_CBC, IV=iv)
+        decrypted_msg = aes.decrypt(decr_msg)
+        print 'Успешно подобрали ключ'
+        print msg == decrypted_msg
+    # Если g == p, то ключ будет равен p ^ (ab) % p, то есть 0 (Из прошлого задания)
+    if g == p:
+        iv = decr_msg[-AES.block_size:]
+        decr_msg = decr_msg[:-AES.block_size]
+        sha1_key = hashlib.sha1(hex(0L)).hexdigest()[:16]
+        aes = AES.new(sha1_key, mode=AES.MODE_CBC, IV=iv)
+        decrypted_msg = aes.decrypt(decr_msg)
+        print 'Успешно подобрали ключ'
+        print msg == decrypted_msg
+    # Если g == p, то ключ будет равен (-1) ^ (ab) % p, то есть 1 или p - 1 (Рассмотрим оба)
+    if g == p - 1:
+        iv = decr_msg[-AES.block_size:]
+        decr_msg = decr_msg[:-AES.block_size]
+        sha1_key = hashlib.sha1(hex(1L)).hexdigest()[:16]
+        aes = AES.new(sha1_key, mode=AES.MODE_CBC, IV=iv)
+        decrypted_msg1 = aes.decrypt(decr_msg)
+        sha1_key = hashlib.sha1(hex(p - 1)).hexdigest()[:16]
+        aes = AES.new(sha1_key, mode=AES.MODE_CBC, IV=iv)
+        decrypted_msg2 = aes.decrypt(decr_msg)
+        print 'Успешно подобрали ключ'
+        print msg in (decrypted_msg1, decrypted_msg2)
     # Отправим расшифрованное сообщение A
     B.send(A, msg=bytes(B.decrypted_msg))
 
@@ -46,17 +76,17 @@ update_g(p - 1)
 Вывод
 g: 1
 Client get the message
-�z��g��i�9�N
-Client get the message
-���p`'[�̬�F�
+Message for Bob!
+Успешно подобрали ключ
+True
 g: p
 Client get the message
 Message for Bob!
-Client get the message
-Message for Bob!
+Успешно подобрали ключ
+True
 g: p - 1
 Client get the message
-B��A�����̴�(&
-Client get the message
-����R<1�ӥ�a_7f
+Message for Bob!
+Успешно подобрали ключ
+True
 """
